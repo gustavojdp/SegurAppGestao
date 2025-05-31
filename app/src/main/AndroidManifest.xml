@@ -2,6 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Permissões para acessar a localização -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -12,6 +16,18 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SegurAppGestao"
         tools:targetApi="31">
+
+        <!-- Adicionando a chave de API do Google Maps -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="@string/google_maps_key" />
+
+        <activity
+            android:name=".RelatorioActivity"
+            android:exported="false" />
+        <activity
+            android:name=".InfoRiscoActivity"
+            android:exported="false" />
         <activity
             android:name=".MapaActivity"
             android:exported="false"

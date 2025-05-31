@@ -2,27 +2,59 @@ package com.example.segurappgestao
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
+import com.example.segurappgestao.databinding.ActivityMainBinding
+import com.google.firebase.firestore.FirebaseFirestore
 
 class MainActivity : AppCompatActivity() {
+
+    private lateinit var binding: ActivityMainBinding
+    private lateinit var btnRelatorio: ImageButton
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        setTheme(R.style.Theme_SegurAppGestao)
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setTheme(R.style.Theme_SegurAppGestao)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        val listaLayout = findViewById<LinearLayout>(R.id.listaRegistrosLayout)
-        val registros = listOf(
-            Pair("Bruno Henrique", "001"),
-            Pair("Ana Silva", "002"),
-            Pair("Carlos Eduardo", "003")
-        )
+        btnRelatorio = findViewById(R.id.btnRelatorio)
 
-        for ((nome, numero) in registros) {
-            listaLayout.addView(criarCardOcorrencia(nome, numero))
+        btnRelatorio.setOnClickListener {
+            val intent = Intent(this, RelatorioActivity::class.java)
+            startActivity(intent)
         }
+
+        val db = FirebaseFirestore.getInstance()
+        val ocorrenciasCollectionRef = db.collection("Ocorrencias")
+
+        data class OcorrenciaInfo(
+            val email: String,
+            val id: String
+        )
+        val listaOcorrencias = mutableListOf<OcorrenciaInfo>()
+
+        ocorrenciasCollectionRef.get()
+            .addOnSuccessListener { querySnapshot ->
+                for (document in querySnapshot.documents) {
+                    val email = document.getString("email") ?: "Sem email"
+                    val id = document.id
+                    val ocorrencia = OcorrenciaInfo(email, id)
+                    listaOcorrencias.add(ocorrencia)
+                }
+
+                // Adiciona um card para cada ocorrência na tela
+                for (ocorrencia in listaOcorrencias) {
+                    val card = criarCardOcorrencia(ocorrencia.email, ocorrencia.id)
+                    binding.listaRegistrosLayout.addView(card)
+                }
+            }
+            .addOnFailureListener { exception ->
+                Log.w("FIREBASE", "Erro ao obter documentos", exception)
+            }
 
         // Marca o botão Lista como ativo na inicialização
         atualizarMenuAtivo(isListaAtivo = true)
@@ -54,14 +86,11 @@ class MainActivity : AppCompatActivity() {
             iconLista.setColorFilter(ContextCompat.getColor(this, android.R.color.white))
             // Ícone Mapa preto (inativo)
             iconMapa.setColorFilter(ContextCompat.getColor(this, android.R.color.black))
-            // Ambos os botões mantêm o fundo azul definido no XML
-            // Não altera background aqui!
         } else {
             // Ícone Mapa branco (ativo)
             iconMapa.setColorFilter(ContextCompat.getColor(this, android.R.color.white))
             // Ícone Lista preto (inativo)
             iconLista.setColorFilter(ContextCompat.getColor(this, android.R.color.black))
-            // Mantém fundo azul fixo para ambos os botões
         }
     }
 
@@ -99,6 +128,10 @@ class MainActivity : AppCompatActivity() {
 
         card.setOnClickListener {
             Toast.makeText(this, "Abrir detalhes da ocorrência $numero", Toast.LENGTH_SHORT).show()
+            val intent = Intent(contexto, InfoRiscoActivity::class.java).apply {
+                putExtra("id", numero)
+            }
+            contexto.startActivity(intent)
         }
 
         return card
